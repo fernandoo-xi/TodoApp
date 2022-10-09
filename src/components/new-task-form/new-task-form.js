@@ -1,36 +1,82 @@
 import React, { Component } from 'react';
-import './new-task-form.css';
+import PropTypes from 'prop-types';
 
 export default class NewTaskForm extends Component {
-  state = {
-    label: '',
-  };
+  constructor(props) {
+    super(props);
 
-  addNewTask = (e) => {
-    this.setState({
-      label: e.target.value,
-    });
-  };
+    this.inputRef = React.createRef();
 
-  onSubmit = (e) => {
-    e.preventDefault();
-    this.props.onTaskAdded(this.state.label);
-    this.setState({
-      label: '',
-    });
-  };
+    this.state = {
+      inputValue: '',
+      min: '',
+      sec: '',
+    };
+
+    this.inputHandler = (value) => {
+      this.setState({
+        inputValue: value,
+      });
+    };
+
+    this.timeInputHandler = (entery, value) => {
+      this.setState({
+        [entery]: Math.min(+value.replace(/[^+\d]/g, ''), 59),
+      });
+    };
+
+    this.submitHandler = (e) => {
+      const { addTask } = this.props;
+      const { inputValue, min, sec } = this.state;
+      e.preventDefault();
+      addTask(inputValue, +min || 0, +sec || 0);
+      this.setState(() => ({
+        inputValue: '',
+        min: '',
+        sec: '',
+      }));
+      this.inputRef.current.focus();
+    };
+  }
+
+  componentDidMount() {
+    this.inputRef.current.focus();
+  }
 
   render() {
+    const { inputValue, min, sec } = this.state;
+
     return (
-      <form onSubmit={this.onSubmit}>
+      <form className="new-todo-form" onSubmit={this.submitHandler}>
         <input
           className="new-todo"
           placeholder="What needs to be done?"
-          autoFocus
-          onChange={this.addNewTask}
-          value={this.state.label}
+          value={inputValue}
+          onChange={(e) => this.inputHandler(e.target.value)}
+          ref={this.inputRef}
         />
+        <input
+          className="new-todo-form__timer"
+          placeholder="Min"
+          value={min}
+          onChange={(e) => this.timeInputHandler('min', e.target.value)}
+        />
+        <input
+          className="new-todo-form__timer"
+          placeholder="Sec"
+          value={sec}
+          onChange={(e) => this.timeInputHandler('sec', e.target.value)}
+        />
+        <input className="hidden" type="submit" />
       </form>
     );
   }
 }
+
+NewTaskForm.defaultProps = {
+  addTask: () => {},
+};
+
+NewTaskForm.propTypes = {
+  addTask: PropTypes.func,
+};

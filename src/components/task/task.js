@@ -1,46 +1,98 @@
 import React, { Component } from 'react';
-import formatDistanceToNow from 'date-fns/formatDistanceToNow';
-import ruLocale from 'date-fns/locale/ru';
 import PropTypes from 'prop-types';
-import './task.css';
 
 export default class Task extends Component {
-  static defaultProps = {
-    label: '',
-    completed: false,
-  };
+  constructor(props) {
+    super(props);
 
-  static propTypes = {
-    label: PropTypes.string,
-    onDeleted: PropTypes.func,
-    onToggleActive: PropTypes.func,
-    completed: PropTypes.bool,
-    date: PropTypes.number,
-  };
+    this.inputRef = React.createRef();
+
+    this.onSubmitHandler = (e) => {
+      const { id, editSubmit, toggleFlagById, inputValue } = this.props;
+      e.preventDefault();
+      editSubmit(id, inputValue);
+      toggleFlagById(id, 'isEditing');
+    };
+
+    this.keyDownHandler = (e) => {
+      const { toggleFlagById, id, description, inputHandler } = this.props;
+      if (e.key === 'Escape') {
+        toggleFlagById(id, 'isEditing');
+        inputHandler(id, description);
+      }
+    };
+  }
+
+  componentDidUpdate(prevProps) {
+    const { isEditing } = this.props;
+    if (isEditing !== prevProps.isEditing && isEditing) this.inputRef.current.focus();
+  }
+
+  keyDownHandler(e) {
+    const { toggleFlagById, id, description, inputHandler } = this.props;
+    if (e.key === 'Escape') {
+      toggleFlagById(id, 'isEditing');
+      inputHandler(id, description);
+    }
+  }
 
   render() {
-    const { label, onDeleted, onToggleActive, completed, date } = this.props;
+    const { id, isCompleted, isEditing, inputValue, onDelite, toggleFlagById, inputHandler, children } = this.props;
 
-    let classNames = '';
+    const taskInput = isEditing ? (
+      <form onSubmit={(e) => this.onSubmitHandler(e)}>
+        <input
+          type="text"
+          className="edit"
+          value={inputValue}
+          required
+          onChange={(e) => inputHandler(id, e.target.value)}
+          onKeyDown={(e) => this.keyDownHandler(e)}
+          ref={this.inputRef}
+        />
+      </form>
+    ) : (
+      ''
+    );
 
-    if (completed) {
-      classNames = 'completed';
-    }
+    const htmlLabel = `task-${id}`;
+
+    const completed = isCompleted ? 'completed' : '';
+    const taskClass = isEditing ? 'editing' : completed;
 
     return (
-      <li className={classNames}>
+      <li className={taskClass}>
         <div className="view">
-          <input className="toggle" type="checkbox" onClick={onToggleActive} />
-          <label>
-            <span className="description">{label}</span>
-            <span className="created">
-              created {formatDistanceToNow(date, 'ddd/MMM/D/YYYY/hh/m/ss', { addSuffix: true, locale: ruLocale })} ago
-            </span>
-          </label>
-          <button className="icon icon-edit"></button>
-          <button className="icon icon-destroy" onClick={onDeleted}></button>
+          <input
+            className="toggle"
+            type="checkbox"
+            checked={isCompleted}
+            onChange={() => toggleFlagById(id, 'isCompleted')}
+            id={htmlLabel}
+          />
+          <label htmlFor={htmlLabel}>{children}</label>
+          <button
+            className="icon icon-edit"
+            onClick={() => toggleFlagById(id, 'isEditing')}
+            type="button"
+            aria-label="edit"
+          />
+          <button className="icon icon-destroy" onClick={() => onDelite(id)} type="button" aria-label="delite" />
         </div>
+        {taskInput}
       </li>
     );
   }
 }
+
+Task.propTypes = {
+  id: PropTypes.number.isRequired,
+  description: PropTypes.string.isRequired,
+  inputValue: PropTypes.string.isRequired,
+  isCompleted: PropTypes.bool.isRequired,
+  isEditing: PropTypes.bool.isRequired,
+  onDelite: PropTypes.func.isRequired,
+  toggleFlagById: PropTypes.func.isRequired,
+  inputHandler: PropTypes.func.isRequired,
+  editSubmit: PropTypes.func.isRequired,
+};
