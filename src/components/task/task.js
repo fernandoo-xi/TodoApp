@@ -1,88 +1,80 @@
-import React, { Component } from 'react';
+import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-export default class Task extends Component {
-  constructor(props) {
-    super(props);
+function Task({
+  id,
+  isCompleted,
+  isEditing,
+  inputValue,
+  onDelite,
+  toggleFlagById,
+  inputHandler,
+  editSubmit,
+  description,
+  children,
+}) {
+  const inputRef = useRef();
 
-    this.inputRef = React.createRef();
+  const onSubmitHandler = (e) => {
+    e.preventDefault();
+    editSubmit(id, inputValue);
+    toggleFlagById(id, 'isEditing');
+  };
 
-    this.onSubmitHandler = (e) => {
-      const { id, editSubmit, toggleFlagById, inputValue } = this.props;
-      e.preventDefault();
-      editSubmit(id, inputValue);
-      toggleFlagById(id, 'isEditing');
-    };
-
-    this.keyDownHandler = (e) => {
-      const { toggleFlagById, id, description, inputHandler } = this.props;
-      if (e.key === 'Escape') {
-        toggleFlagById(id, 'isEditing');
-        inputHandler(id, description);
-      }
-    };
-  }
-
-  componentDidUpdate(prevProps) {
-    const { isEditing } = this.props;
-    if (isEditing !== prevProps.isEditing && isEditing) this.inputRef.current.focus();
-  }
-
-  keyDownHandler(e) {
-    const { toggleFlagById, id, description, inputHandler } = this.props;
+  const keyDownHandler = (e) => {
     if (e.key === 'Escape') {
       toggleFlagById(id, 'isEditing');
       inputHandler(id, description);
     }
-  }
+  };
 
-  render() {
-    const { id, isCompleted, isEditing, inputValue, onDelite, toggleFlagById, inputHandler, children } = this.props;
+  useEffect(() => {
+    if (isEditing) inputRef.current.focus();
+  }, [isEditing]);
 
-    const taskInput = isEditing ? (
-      <form onSubmit={(e) => this.onSubmitHandler(e)}>
+  const taskInput = isEditing ? (
+    <form onSubmit={(e) => onSubmitHandler(e)}>
+      <input
+        type="text"
+        className="edit"
+        value={inputValue}
+        required
+        onChange={(e) => inputHandler(id, e.target.value)}
+        onKeyDown={(e) => keyDownHandler(e)}
+        ref={inputRef}
+      />
+    </form>
+  ) : (
+    ''
+  );
+
+  const htmlLabel = `task-${id}`;
+
+  const completed = isCompleted ? 'completed' : '';
+  const taskClass = isEditing ? 'editing' : completed;
+
+  return (
+    <li className={taskClass}>
+      <div className="view">
         <input
-          type="text"
-          className="edit"
-          value={inputValue}
-          required
-          onChange={(e) => inputHandler(id, e.target.value)}
-          onKeyDown={(e) => this.keyDownHandler(e)}
-          ref={this.inputRef}
+          className="toggle"
+          type="checkbox"
+          checked={isCompleted}
+          onChange={() => toggleFlagById(id, 'isCompleted')}
+          id={htmlLabel}
         />
-      </form>
-    ) : (
-      ''
-    );
-
-    const htmlLabel = `task-${id}`;
-
-    const completed = isCompleted ? 'completed' : '';
-    const taskClass = isEditing ? 'editing' : completed;
-
-    return (
-      <li className={taskClass}>
-        <div className="view">
-          <input
-            className="toggle"
-            type="checkbox"
-            checked={isCompleted}
-            onChange={() => toggleFlagById(id, 'isCompleted')}
-            id={htmlLabel}
-          />
-          <label htmlFor={htmlLabel}>{children}</label>
-          <button
-            className="icon icon-edit"
-            onClick={() => toggleFlagById(id, 'isEditing')}
-            type="button"
-            aria-label="edit"
-          />
-          <button className="icon icon-destroy" onClick={() => onDelite(id)} type="button" aria-label="delite" />
-        </div>
-        {taskInput}
-      </li>
-    );
-  }
+        <label htmlFor={htmlLabel}>{children}</label>
+        <button
+          className="icon icon-edit"
+          onClick={() => toggleFlagById(id, 'isEditing')}
+          type="button"
+          aria-label="edit"
+        />
+        <button className="icon icon-destroy" onClick={() => onDelite(id)} type="button" aria-label="delite" />
+      </div>
+      {taskInput}
+    </li>
+  );
 }
 
 Task.propTypes = {
@@ -96,3 +88,12 @@ Task.propTypes = {
   inputHandler: PropTypes.func.isRequired,
   editSubmit: PropTypes.func.isRequired,
 };
+
+const areEqual = (prevProps, nextProps) =>
+  prevProps.description === nextProps.description &&
+  prevProps.inputValue === nextProps.inputValue &&
+  prevProps.isCompleted === nextProps.isCompleted &&
+  prevProps.isEditing === nextProps.isEditing &&
+  prevProps.timer === nextProps.timer;
+
+export default React.memo(Task, areEqual);

@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
+import React from 'react';
 
-export default function TasksFilter({ filter, onFilterSelect }) {
+function TasksFilter({ filter, onFilterSelect }) {
   return (
     <ul className="filters">
       <li>
@@ -39,3 +40,5 @@ TasksFilter.propTypes = {
   filter: PropTypes.string,
   onFilterSelect: PropTypes.func,
 };
+
+export default React.memo(TasksFilter);

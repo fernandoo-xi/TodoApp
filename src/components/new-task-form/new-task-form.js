@@ -1,82 +1,59 @@
-import React, { Component } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-export default class NewTaskForm extends Component {
-  constructor(props) {
-    super(props);
-
-    this.inputRef = React.createRef();
-
-    this.state = {
-      inputValue: '',
-      min: '',
-      sec: '',
-    };
-
-    this.inputHandler = (value) => {
-      this.setState({
-        inputValue: value,
-      });
-    };
-
-    this.timeInputHandler = (entery, value) => {
-      this.setState({
-        [entery]: Math.min(+value.replace(/[^+\d]/g, ''), 59),
-      });
-    };
-
-    this.submitHandler = (e) => {
-      const { addTask } = this.props;
-      const { inputValue, min, sec } = this.state;
-      e.preventDefault();
-      addTask(inputValue, +min || 0, +sec || 0);
-      this.setState(() => ({
-        inputValue: '',
-        min: '',
-        sec: '',
-      }));
-      this.inputRef.current.focus();
-    };
-  }
-
-  componentDidMount() {
-    this.inputRef.current.focus();
-  }
-
-  render() {
-    const { inputValue, min, sec } = this.state;
-
-    return (
-      <form className="new-todo-form" onSubmit={this.submitHandler}>
-        <input
-          className="new-todo"
-          placeholder="What needs to be done?"
-          value={inputValue}
-          onChange={(e) => this.inputHandler(e.target.value)}
-          ref={this.inputRef}
-        />
-        <input
-          className="new-todo-form__timer"
-          placeholder="Min"
-          value={min}
-          onChange={(e) => this.timeInputHandler('min', e.target.value)}
-        />
-        <input
-          className="new-todo-form__timer"
-          placeholder="Sec"
-          value={sec}
-          onChange={(e) => this.timeInputHandler('sec', e.target.value)}
-        />
-        <input className="hidden" type="submit" />
-      </form>
-    );
-  }
+function formatTime(value) {
+  return Math.min(+value.replace(/[^+\d]/g, ''), 59);
 }
 
-NewTaskForm.defaultProps = {
-  addTask: () => {},
-};
+function NewTaskForm({ addTask }) {
+  const [inputValue, setInputValue] = useState('');
+  const [min, setMin] = useState('');
+  const [sec, setSec] = useState('');
+
+  const inputRef = useRef();
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+    addTask(inputValue, +min || 0, +sec || 0);
+    setInputValue('');
+    setMin('');
+    setSec('');
+    inputRef.current.focus();
+  };
+
+  useEffect(() => {
+    inputRef.current.focus();
+  }, []);
+
+  return (
+    <form className="new-todo-form" onSubmit={submitHandler}>
+      <input
+        className="new-todo"
+        placeholder="What needs to be done?"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        ref={inputRef}
+        required
+      />
+      <input
+        className="new-todo-form__timer"
+        placeholder="Min"
+        value={min}
+        onChange={(e) => setMin(formatTime(e.target.value))}
+      />
+      <input
+        className="new-todo-form__timer"
+        placeholder="Sec"
+        value={sec}
+        onChange={(e) => setSec(formatTime(e.target.value))}
+      />
+      <input className="hidden" type="submit" />
+    </form>
+  );
+}
 
 NewTaskForm.propTypes = {
-  addTask: PropTypes.func,
+  addTask: PropTypes.func.isRequired,
 };
+
+export default React.memo(NewTaskForm);

@@ -1,85 +1,42 @@
-import { Component } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
-function addZero(num) {
+const addZero = (num) => {
   const str = num.toString();
   return str.length > 1 ? str : `0${str}`;
-}
-export default class Timer extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      timerRun: true,
+};
+function Timer({ timerUpdate, id, completed, timer }) {
+  const [timerRun, setTimerRun] = useState(true);
+
+  const interval = useRef(null);
+
+  useEffect(() => {
+    interval.current = timerRun && !completed ? setInterval(() => timerUpdate(id), 1000) : null;
+    return () => {
+      clearInterval(interval.current);
     };
-    this.toggleTimer = (value) => {
-      const { completed } = this.props;
-      if (completed) return;
-      this.setState({
-        timerRun: value,
-      });
-    };
-  }
+  }, [timerRun]);
 
-  componentDidMount() {
-    const { timerUpdate, id, completed } = this.props;
-    if (completed) {
-      this.setState({
-        timerRun: false,
-      });
-    } else {
-      this.interval = setInterval(() => timerUpdate(id), 1000);
-    }
-  }
+  useEffect(() => {
+    setTimerRun(!completed);
+  }, [completed]);
 
-  componentDidUpdate(prevProps, PrevState) {
-    const { timerUpdate, id, completed } = this.props;
-    const { timerRun } = this.state;
-    if (timerRun !== PrevState.timerRun) {
-      if (timerRun) {
-        this.interval = setInterval(() => timerUpdate(id), 1000);
-      } else {
-        clearInterval(this.interval);
-      }
-    }
-    if (completed !== prevProps.completed) {
-      if (completed) {
-        clearInterval(this.interval);
-      } else {
-        this.interval = setInterval(() => timerUpdate(id), 1000);
-      }
-    }
-  }
+  const min = useMemo(() => addZero(new Date(timer).getMinutes()), [timer]);
+  const sec = useMemo(() => addZero(new Date(timer).getSeconds()), [timer]);
 
-  componentWillUnmount() {
-    clearInterval(this.interval);
-  }
+  const buttons = completed ? null : (
+    <>
+      <button className="icon icon-play" type="button" aria-label="play-timer" onClick={() => setTimerRun(true)} />
+      <button className="icon icon-pause" type="button" aria-label="pause-timer" onClick={() => setTimerRun(false)} />
+    </>
+  );
 
-  render() {
-    const { timer } = this.props;
-
-    const time = new Date(timer);
-
-    const min = addZero(time.getMinutes());
-    const sec = addZero(time.getSeconds());
-
-    return (
-      <span className="description">
-        <button
-          className="icon icon-play"
-          type="button"
-          aria-label="play-timer"
-          onClick={() => this.toggleTimer(true)}
-        />
-        <button
-          className="icon icon-pause"
-          type="button"
-          aria-label="pause-timer"
-          onClick={() => this.toggleTimer(false)}
-        />
-        {`  ${min}:${sec} `}
-      </span>
-    );
-  }
+  return (
+    <span className="description">
+      {buttons}
+      {`  ${min}:${sec}`}
+    </span>
+  );
 }
 
 Timer.propTypes = {
@@ -87,3 +44,5 @@ Timer.propTypes = {
   id: PropTypes.number.isRequired,
   completed: PropTypes.bool.isRequired,
 };
+
+export default React.memo(Timer);

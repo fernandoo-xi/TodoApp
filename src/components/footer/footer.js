@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
+import React from 'react';
 
-export default function Footer({ clearCompleted, itemsLeft, children }) {
+function Footer({ clearCompleted, itemsLeft, children }) {
   return (
     <footer className="footer">
       <span className="todo-count">{itemsLeft} items left</span>
@@ -21,3 +22,8 @@ Footer.propTypes = {
   clearCompleted: PropTypes.func,
   itemsLeft: PropTypes.number,
 };
+
+const areEqual = (prevProps, nextProps) =>
+  prevProps.itemsLeft === nextProps.itemsLeft && prevProps.filter === nextProps.filter;
+
+export default React.memo(Footer, areEqual);
